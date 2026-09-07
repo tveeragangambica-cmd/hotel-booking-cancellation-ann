@@ -79,8 +79,8 @@ y_test = torch.tensor(
 #================================
 # 5. Create ANN
 #================================
-# create a neural network class for predicting the value of a house.
-class HousePriceANN(nn.Module):
+# create a neural network class for predicting hotel booking cancellation.
+class HotelBookingANN(nn.Module):
     def __init__(self):
       # Initialize the parent neural network class.
         super().__init__()
@@ -97,19 +97,23 @@ class HousePriceANN(nn.Module):
       #pass the result through the second layer and apply relu again.
       x = torch.relu(self.layer2(x))
       #pass the result to the output layer
-      #to get the predicted house value.
+      #to get the predicted booking cancellation.
       x = self.output(x)
       return x
 #create an object of the ANN class.
-model = HousePriceANN()
+model = HotelBookingANN()
 #display the structure of neural network.
 print(model)
 
 #============================
 # 6. Loss function
 #============================
-loss_function = nn.MSELoss()
-# MSELoss calculates the difference between predicted house values and actual values.
+
+loss_function = nn.BCEWithLogitsLoss()
+
+# BCEWithLogitsLoss is used for binary classification.
+# It measures the error between predicted cancellation
+# and the actual cancellation (0 or 1).
 
 #============================
 # 7. Optimizer
@@ -123,24 +127,51 @@ optimizer = optim.Adam(
 #============================
 # 8. Training
 #============================
-# the ANN will learn from the training data
+# The ANN will learn from the training data
 # for 1000 complete training rounds.
 epochs = 1000
+
 for epoch in range(epochs):
-  # give the training data to the ANN and get the predicted house values.
-  prediction = model(x_train)
-  # compare predictions with actual values and calculate the prediction error.
-  loss = loss_function(prediction, y_train)
-  # clear the gradients from the previous step.
-  optimizer.zero_grad()
-  # calculate gradients using backpropagation
-  # so the ANN can learn from its error.
-  loss.backward()
-  # update the weights of the ANN.
-  optimizer.step()
-  # Display the loss after every 100 epochs.
-  if(epoch+1)%100==0:
-    print(
-        f"Epoch: {epoch+1}/{epochs}"
-        f"Loss: {loss.item():.2f}"
-    )
+
+    # Give the training data to the ANN
+    # and get the predicted cancellation values.
+    prediction = model(x_train)
+
+    # Compare predictions with actual values
+    # and calculate the prediction error.
+    loss = loss_function(prediction, y_train)
+
+    # Clear the gradients from the previous step.
+    optimizer.zero_grad()
+
+    # Calculate gradients using backpropagation
+    # so the ANN can learn from its error.
+    loss.backward()
+
+    # Update the weights of the ANN.
+    optimizer.step()
+
+    # Display the loss after every 100 epochs.
+    if (epoch + 1) % 100 == 0:
+        print(
+            f"Epoch: {epoch+1}/{epochs} "
+            f"Loss: {loss.item():.2f}"
+        )
+
+#============================
+# 9. Testing
+#============================
+
+# Turn off gradient calculation because we are only testing.
+with torch.no_grad():
+
+    # Get predictions from the test data.
+    prediction = model(x_test)
+
+    # Convert model output into 0 or 1.
+    predicted_class = (torch.sigmoid(prediction) >= 0.5).float()
+
+    # Calculate accuracy.
+    accuracy = (predicted_class == y_test).float().mean()
+
+print("Test Accuracy:", accuracy.item() * 100, "%")
